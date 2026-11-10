@@ -22,14 +22,18 @@ sequenceDiagram
     User->>App: Digita o CEP e clica em buscar
     App->>Api: api.get("{cep}/json/")
     Api->>ViaCEP: GET https://viacep.com.br/ws/{cep}/json/
-    alt Resposta 2xx
-        ViaCEP-->>Api: JSON do endereço
+    alt CEP encontrado
+        ViaCEP-->>Api: 200 OK (JSON do endereço)
         Api-->>App: response.data
         App-->>User: Exibe logradouro, complemento, bairro, cidade e UF
-    else Erro HTTP (ex.: formato inválido)
+    else CEP inexistente
+        ViaCEP-->>Api: 200 OK ({"erro": true})
+        Api-->>App: response.data com erro
+        App-->>User: Esconde o endereço, limpa o campo e mostra o toast "CEP inválido"
+    else Formato inválido
         ViaCEP-->>Api: 400 Bad Request
         Api-->>App: Exceção
-        App-->>User: Limpa o campo e mostra o toast "CEP inválido"
+        App-->>User: Esconde o endereço, limpa o campo e mostra o toast "CEP inválido"
     end
 ```
 
@@ -44,7 +48,7 @@ Descobrir o endereço de um CEP normalmente exige abrir o site dos Correios ou u
 Uma tela mínima com um único campo:
 - **Busca direta**: o CEP digitado é enviado ao ViaCEP ao clicar no botão de busca.
 - **Resultado enxuto**: o endereço aparece logo abaixo do campo, em duas linhas (logradouro e complemento; bairro, cidade e UF).
-- **Feedback de erro**: quando a requisição falha, um toast "CEP inválido" aparece no canto inferior direito e o campo é limpo.
+- **Feedback de erro**: para CEP com formato inválido ou inexistente (o ViaCEP responde `200` com `{"erro": true}`), um toast "CEP inválido" aparece no canto inferior direito, o campo é limpo e o endereço anterior é escondido.
 
 ---
 
@@ -164,7 +168,6 @@ npm test
 
 - **Sem chaves nem segredos**: o ViaCEP é público e não exige autenticação; o projeto não tem variáveis de ambiente.
 - **Sem validação no cliente**: o valor digitado vai direto para a URL, sem máscara nem checagem de 8 dígitos; quem rejeita formatos inválidos é o ViaCEP.
-- **CEP inexistente não é tratado**: para um CEP com formato válido que não existe, o ViaCEP responde `200` com `{"erro": true}`; a tela então mostra o bloco de endereço com campos vazios em vez do toast de erro.
 - **Sem testes automatizados**: as bibliotecas do Testing Library vêm do template do CRA, mas não há arquivos de teste.
 
 ---
