@@ -14,6 +14,12 @@ function App() {
   async function getCEP() {
     try {
       const response = await api.get(`${input}/json/`);
+
+      // ViaCEP responde 200 com { erro: true } para CEP inexistente
+      if (response.data.erro) {
+        throw new Error(`CEP ${input} não encontrado`);
+      }
+
       setCep(response.data);
 
       const adress = document.querySelector("#adress");
@@ -22,6 +28,7 @@ function App() {
     } catch (error) {
       console.error(error);
       setInput("");
+      document.querySelector("#adress").classList.add('hidden');
 
       toast.error('CEP inválido', {
         position: toast.POSITION.BOTTOM_RIGHT
